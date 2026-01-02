@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QPUS{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .arabic-text {
+            font-family: 'Amiri', serif;
+            direction: rtl;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <a href="/" class="text-2xl font-bold text-emerald-600 tracking-tight">QPUS</a>
+                </div>
+                <nav class="flex space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-emerald-600 px-3 py-2 rounded-md font-medium">Kur'an</a>
+                    <a href="/concepts"
+                        class="text-gray-700 hover:text-emerald-600 px-3 py-2 rounded-md font-medium">Kavramlar</a>
+                    <a href="/reflections"
+                        class="text-gray-700 hover:text-emerald-600 px-3 py-2 rounded-md font-medium">Tefekkürler</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-100 border-t mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            &copy; 2026 Qur’an Personal Understanding System (QPUS). Just text, understanding, and you.
+        </div>
+    </footer>
+
+</body>
+
+</html>

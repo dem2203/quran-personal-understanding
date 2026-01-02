@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Kavramlar - QPUS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="text-center">
+        <h1 class="text-3xl font-extrabold text-gray-900">Kavramlar</h1>
+        <p class="mt-2 text-gray-600">Kur'an'ın temel kavramları ve ilgili ayetleri.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for concept in concepts %}
+        <a href="/concept/{{ concept.id }}"
+            class="block p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition duration-200 h-full flex flex-col">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">{{ concept.name }}</h2>
+            <p class="text-gray-600 text-sm flex-grow">{{ concept.definition }}</p>
+            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
+                <span class="text-emerald-600 font-medium">{{ concept.ayats|length }} Ayet</span>
+                <span class="text-gray-400">&rarr;</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
