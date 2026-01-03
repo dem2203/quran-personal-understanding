@@ -118,3 +118,26 @@ class ReadingFlowStep(Base):
 
     def __repr__(self):
         return f"<ReadingFlowStep {self.flow_id}:{self.order}>"
+
+class NuzulSebebi(Base):
+    """Occasion/reason of revelation for verses - from Al-Wahidi's Asbab al-Nuzul"""
+    __tablename__ = "nuzul_sebebi"
+
+    id = Column(Integer, primary_key=True, index=True)
+    surah_number = Column(Integer, index=True, nullable=False)
+    ayat_number = Column(Integer, index=True, nullable=False)
+    text_en = Column(Text, nullable=True)  # English text from Al-Wahidi
+    source = Column(String, default="Al-Wahidi")  # Source attribution
+    
+    def __repr__(self):
+        return f"<NuzulSebebi {self.surah_number}:{self.ayat_number}>"
+
+# Association table for Many-to-Many ayat cross-references
+ayat_reference_association = Table(
+    "ayat_reference",
+    Base.metadata,
+    Column("source_ayat_id", Integer, ForeignKey("ayat.id"), primary_key=True),
+    Column("target_ayat_id", Integer, ForeignKey("ayat.id"), primary_key=True),
+    Column("reference_type", String, nullable=True),  # "tefsir", "theme", "similar"
+)
+

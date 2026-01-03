@@ -42,6 +42,14 @@ def run_initial_import():
                 print("Mekki/Medeni and reading flows completed.")
             except Exception as e:
                 print(f"Error seeding Mekki/flows: {e}")
+            
+            # Import Nuzul Sebebi (Asbab al-Nuzul)
+            try:
+                from import_nuzul_sebebi import import_nuzul_sebebi
+                import_nuzul_sebebi()
+                print("Nuzul Sebebi import completed.")
+            except Exception as e:
+                print(f"Error importing Nuzul Sebebi: {e}")
         else:
             print(f"Database has {ayat_count} ayats. Skipping import.")
     finally:

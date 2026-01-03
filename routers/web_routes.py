@@ -38,6 +38,8 @@ async def read_home(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/surah/{surah_number}", response_class=HTMLResponse)
 async def read_surah(request: Request, surah_number: int, db: Session = Depends(get_db)):
+    from models import NuzulSebebi
+    
     ayats = db.query(Ayat).filter(Ayat.surah_number == surah_number).order_by(Ayat.ayat_number).all()
     surah_name = SURAH_NAMES.get(surah_number, f"Sure {surah_number}")
     
@@ -45,6 +47,10 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
     favorite_ids = set(
         f.ayat_id for f in db.query(Favorite).join(Ayat).filter(Ayat.surah_number == surah_number).all()
     )
+    
+    # Get Nuzul Sebebi data for this surah (indexed by ayat number)
+    nuzul_list = db.query(NuzulSebebi).filter(NuzulSebebi.surah_number == surah_number).all()
+    nuzul_map = {ns.ayat_number: ns.text_en for ns in nuzul_list}
     
     # Update last read position
     set_preference(db, "last_read_surah", str(surah_number))
@@ -56,7 +62,8 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
         "surah_number": surah_number,
         "surah_name": surah_name,
         "ayats": ayats,
-        "favorite_ids": favorite_ids
+        "favorite_ids": favorite_ids,
+        "nuzul_map": nuzul_map
     })
 
 @router.post("/reflection/add", response_class=HTMLResponse)
