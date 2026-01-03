@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 import models
-from routers import web_routes, concepts
+from routers import web_routes, concepts, reading_flows
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -16,6 +16,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Include Routers
 app.include_router(web_routes.router)
 app.include_router(concepts.router)
+app.include_router(reading_flows.router)
 
 @app.get("/api/status")
 def read_root():

@@ -18,11 +18,44 @@
             id="ayat-{{ ayat.ayat_number }}">
             <!-- Header -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">
-                    {{ surah_number }}:{{ ayat.ayat_number }}
-                </span>
+                <div class="flex items-center space-x-2">
+                    <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">
+                        {{ surah_number }}:{{ ayat.ayat_number }}
+                    </span>
+                    {% if ayat.is_mekki is not none %}
+                    <span
+                        class="text-xs px-2 py-0.5 rounded {% if ayat.is_mekki %}bg-purple-100 text-purple-700{% else %}bg-teal-100 text-teal-700{% endif %}">
+                        {{ "Mekkî" if ayat.is_mekki else "Medenî" }}
+                    </span>
+                    {% endif %}
+                    {% if ayat.context_type %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+                        {{ ayat.context_type }}
+                    </span>
+                    {% endif %}
+                </div>
                 <div class="flex space-x-2">
-                    <!-- Actions like Favorite could go here -->
+                    <!-- Favorite Button -->
+                    <form action="/favorite/toggle" method="POST" class="inline">
+                        <input type="hidden" name="ayat_id" value="{{ ayat.id }}">
+                        <input type="hidden" name="next_url"
+                            value="/surah/{{ surah_number }}#ayat-{{ ayat.ayat_number }}">
+                        <button type="submit" class="p-1 rounded hover:bg-gray-100" title="Favorilere ekle/çıkar">
+                            {% if ayat.id in favorite_ids %}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-yellow-500"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                            {% endif %}
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -62,7 +95,9 @@
                             <textarea name="content" rows="3"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
                                 placeholder="Bu ayet size ne düşündürdü?"></textarea>
-                            <div class="mt-2 flex justify-end">
+                            <div class="mt-2 flex justify-between items-center">
+                                <input type="text" name="concept_tag" placeholder="Kavram etiketi (opsiyonel)"
+                                    class="text-sm rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-1.5 border w-40">
                                 <button type="submit"
                                     class="inline-flex justify-center py-1.5 px-3 border border-transparent shadow-sm text-xs font-medium rounded text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
                                     Kaydet

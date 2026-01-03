@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ flow.title }} - QPUS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8 border-b pb-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-extrabold text-gray-900">{{ flow.title }}</h1>
+            <a href="/reading-flows" class="text-emerald-600 hover:text-emerald-700 font-medium text-sm">&larr; Akışlara
+                Dön</a>
+        </div>
+        <p class="mt-4 text-gray-600">{{ flow.description }}</p>
+    </div>
+
+    <div class="space-y-8">
+        {% for step in flow.steps %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <!-- Step header -->
+            <div class="flex items-center justify-between mb-4">
+                <span class="bg-emerald-100 text-emerald-700 text-sm font-bold px-3 py-1 rounded-full">
+                    Adım {{ step.order }}
+                </span>
+                <a href="/surah/{{ step.ayat.surah_number }}#ayat-{{ step.ayat.ayat_number }}"
+                    class="text-sm text-gray-500 hover:text-emerald-600">
+                    {{ step.ayat.surah_number }}:{{ step.ayat.ayat_number }}
+                </a>
+            </div>
+
+            <!-- Arabic text -->
+            <div class="text-right mb-4">
+                <p class="arabic-text text-2xl leading-loose text-gray-800">{{ step.ayat.arabic_text }}</p>
+            </div>
+
+            <!-- Translation -->
+            <div class="text-gray-700 text-lg leading-relaxed mb-4">
+                {{ step.ayat.translation_1 }}
+            </div>
+
+            <!-- Reflection question -->
+            {% if step.reflection_question %}
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r">
+                <p class="text-sm font-medium text-amber-800">Düşünme Sorusu:</p>
+                <p class="mt-1 text-amber-900">{{ step.reflection_question }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

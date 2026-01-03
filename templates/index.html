@@ -9,10 +9,25 @@
         <p class="mt-2 text-gray-600">Okumak ve tefekkür etmek istediğiniz sureyi seçin.</p>
     </div>
 
+    {% if last_surah %}
+    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg p-6 text-white shadow-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-90">Kaldığınız yer</p>
+                <p class="text-xl font-bold mt-1">Sure {{ last_surah }}, Ayet {{ last_ayat or 1 }}</p>
+            </div>
+            <a href="/surah/{{ last_surah }}#ayat-{{ last_ayat or 1 }}"
+                class="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-emerald-50 transition">
+                Devam Et →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for surah in surahs %}
         <a href="/surah/{{ surah.number }}"
-            class="block p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition duration-200">
+            class="block p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition duration-200 {% if surah.number == last_surah %}ring-2 ring-emerald-400{% endif %}">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
                     <span
@@ -21,7 +36,6 @@
                     </span>
                     <div>
                         <h2 class="text-lg font-medium text-gray-900">{{ surah.name }}</h2>
-                        <!-- <p class="text-xs text-gray-500">Mekki/Medeni</p> -->
                     </div>
                 </div>
                 <div class="text-gray-400">
