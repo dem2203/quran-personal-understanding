@@ -50,6 +50,14 @@ def run_initial_import():
                 print("Nuzul Sebebi import completed.")
             except Exception as e:
                 print(f"Error importing Nuzul Sebebi: {e}")
+            
+            # Import Mutashabihat (Similar Verses)
+            try:
+                from import_mutashabihat import import_mutashabihat
+                import_mutashabihat()
+                print("Mutashabihat import completed.")
+            except Exception as e:
+                print(f"Error importing Mutashabihat: {e}")
         else:
             print(f"Database has {ayat_count} ayats. Skipping import.")
     finally:

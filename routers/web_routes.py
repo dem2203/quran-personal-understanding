@@ -39,6 +39,7 @@ async def read_home(request: Request, db: Session = Depends(get_db)):
 @router.get("/surah/{surah_number}", response_class=HTMLResponse)
 async def read_surah(request: Request, surah_number: int, db: Session = Depends(get_db)):
     from models import NuzulSebebi
+    from sqlalchemy import text
     
     ayats = db.query(Ayat).filter(Ayat.surah_number == surah_number).order_by(Ayat.ayat_number).all()
     surah_name = SURAH_NAMES.get(surah_number, f"Sure {surah_number}")
@@ -52,6 +53,20 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
     nuzul_list = db.query(NuzulSebebi).filter(NuzulSebebi.surah_number == surah_number).all()
     nuzul_map = {ns.ayat_number: ns.text_en for ns in nuzul_list}
     
+    # Get Similar Verses (Mutashabihat) for this surah
+    similar_map = {}
+    try:
+        result = db.execute(text(
+            "SELECT source_ayat, target_surah, target_ayat FROM similar_ayat WHERE source_surah = :surah"
+        ), {"surah": surah_number})
+        for row in result:
+            source_ayat = row[0]
+            if source_ayat not in similar_map:
+                similar_map[source_ayat] = []
+            similar_map[source_ayat].append({"surah": row[1], "ayat": row[2]})
+    except:
+        pass  # Table may not exist yet
+    
     # Update last read position
     set_preference(db, "last_read_surah", str(surah_number))
     if ayats:
@@ -63,7 +78,9 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
         "surah_name": surah_name,
         "ayats": ayats,
         "favorite_ids": favorite_ids,
-        "nuzul_map": nuzul_map
+        "nuzul_map": nuzul_map,
+        "similar_map": similar_map,
+        "surah_names": SURAH_NAMES
     })
 
 @router.post("/reflection/add", response_class=HTMLResponse)
