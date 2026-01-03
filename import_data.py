@@ -132,3 +132,7 @@ def import_data_from_api():
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     import_data_from_api()
+
+# Alias for main.py startup
+def import_quran_data():
+    import_data_from_api()
