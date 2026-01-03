@@ -53,7 +53,7 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
     nuzul_list = db.query(NuzulSebebi).filter(NuzulSebebi.surah_number == surah_number).all()
     nuzul_map = {ns.ayat_number: ns.text_en for ns in nuzul_list}
     
-    # Get Similar Verses (Mutashabihat) for this surah
+    # Get Similar Verses (Mutashabihat) for this surah - word similarity
     similar_map = {}
     try:
         result = db.execute(text(
@@ -64,6 +64,20 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
             if source_ayat not in similar_map:
                 similar_map[source_ayat] = []
             similar_map[source_ayat].append({"surah": row[1], "ayat": row[2]})
+    except:
+        pass  # Table may not exist yet
+    
+    # Get Semantic Similarity (QurSim) for this surah - meaning similarity
+    semantic_map = {}
+    try:
+        result = db.execute(text(
+            "SELECT source_ayat, target_surah, target_ayat, similarity_degree FROM semantic_similarity WHERE source_surah = :surah"
+        ), {"surah": surah_number})
+        for row in result:
+            source_ayat = row[0]
+            if source_ayat not in semantic_map:
+                semantic_map[source_ayat] = []
+            semantic_map[source_ayat].append({"surah": row[1], "ayat": row[2], "degree": row[3]})
     except:
         pass  # Table may not exist yet
     
@@ -80,6 +94,7 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
         "favorite_ids": favorite_ids,
         "nuzul_map": nuzul_map,
         "similar_map": similar_map,
+        "semantic_map": semantic_map,
         "surah_names": SURAH_NAMES
     })
 

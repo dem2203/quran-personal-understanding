@@ -58,6 +58,14 @@ def run_initial_import():
                 print("Mutashabihat import completed.")
             except Exception as e:
                 print(f"Error importing Mutashabihat: {e}")
+            
+            # Import QurSim Semantic Similarity
+            try:
+                from import_qursim import import_qursim
+                import_qursim()
+                print("QurSim import completed.")
+            except Exception as e:
+                print(f"Error importing QurSim: {e}")
         else:
             print(f"Database has {ayat_count} ayats. Skipping import.")
     finally:

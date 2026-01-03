@@ -6,3 +6,5 @@ jinja2
 python-multipart
 # requests is often needed for verification or scripts
 requests
+# For parsing QurSim XLSX files
+openpyxl
