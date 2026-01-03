@@ -66,6 +66,14 @@ def run_initial_import():
                 print("QurSim import completed.")
             except Exception as e:
                 print(f"Error importing QurSim: {e}")
+            
+            # Import Tafsir References
+            try:
+                from import_tafsir_refs import import_tafsir_refs
+                import_tafsir_refs()
+                print("Tafsir references import completed.")
+            except Exception as e:
+                print(f"Error importing Tafsir refs: {e}")
         else:
             print(f"Database has {ayat_count} ayats. Skipping import.")
     finally:

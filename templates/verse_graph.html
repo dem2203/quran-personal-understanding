@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Ayet İlişki Ağı</h1>
+            <p class="text-indigo-100 text-sm">{{ surah_name }} {{ ayat_number }}. ayet</p>
+        </div>
+
+        <!-- Graph Container -->
+        <div id="graph-container" class="relative"
+            style="height: 500px; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);">
+            <div id="loading" class="absolute inset-0 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p class="text-gray-600">Grafik yükleniyor...</p>
+                </div>
+            </div>
+            <svg id="graph-svg" class="w-full h-full"></svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="px-6 py-4 bg-gray-50 border-t flex flex-wrap gap-4 text-sm">
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full bg-emerald-500 mr-2"></div>
+                <span>Mevcut Ayet</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full bg-cyan-500 mr-2"></div>
+                <span>Kelime Benzerliği</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full bg-amber-500 mr-2"></div>
+                <span>Anlam Benzerliği</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full bg-rose-500 mr-2"></div>
+                <span>Bu Ayete Atıf</span>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="px-6 py-4 border-t">
+            <a href="/surah/{{ surah_number }}#ayat-{{ ayat_number }}"
+                class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Ayete Dön
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    const graphData = {{ graph_data | safe }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('graph-container');
+        const svg = d3.select('#graph-svg');
+        const width = container.clientWidth;
+        const height = 500;
+
+        document.getElementById('loading').style.display = 'none';
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(40));
+
+        // Draw links
+        const link = svg.append('g')
+            .selectAll('line')
+            .data(graphData.links)
+            .enter().append('line')
+            .attr('stroke', d => d.type === 'kelime' ? '#06b6d4' : d.type === 'anlam' ? '#f59e0b' : '#f43f5e')
+            .attr('stroke-width', 2)
+            .attr('stroke-opacity', 0.6);
+
+        // Draw nodes
+        const node = svg.append('g')
+            .selectAll('g')
+            .data(graphData.nodes)
+            .enter().append('g')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
+
+        node.append('circle')
+            .attr('r', d => d.isCenter ? 25 : 18)
+            .attr('fill', d => {
+                if (d.isCenter) return '#10b981';
+                if (d.type === 'kelime') return '#06b6d4';
+                if (d.type === 'anlam') return '#f59e0b';
+                return '#f43f5e';
+            })
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2)
+            .style('cursor', 'pointer');
+
+        node.append('text')
+            .text(d => d.label)
+            .attr('text-anchor', 'middle')
+            .attr('dy', '.35em')
+            .attr('fill', 'white')
+            .attr('font-size', d => d.isCenter ? '12px' : '10px')
+            .attr('font-weight', 'bold')
+            .style('pointer-events', 'none');
+
+        // Click handler to navigate
+        node.on('click', function (event, d) {
+            if (!d.isCenter) {
+                window.location.href = `/surah/${d.surah}#ayat-${d.ayat}`;
+            }
+        });
+
+        // Tick function
+        simulation.on('tick', () => {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            node.attr('transform', d => `translate(${d.x},${d.y})`);
+        });
+
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+    });
+</script>
+{% endblock %}

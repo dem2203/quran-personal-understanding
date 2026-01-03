@@ -67,6 +67,30 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
     except:
         pass  # Table may not exist yet
     
+    # REVERSE: Get verses that reference THIS surah's verses (bidirectional)
+    referenced_by_map = {}
+    try:
+        result = db.execute(text(
+            "SELECT target_ayat, source_surah, source_ayat FROM similar_ayat WHERE target_surah = :surah"
+        ), {"surah": surah_number})
+        for row in result:
+            target_ayat = row[0]
+            if target_ayat not in referenced_by_map:
+                referenced_by_map[target_ayat] = []
+            referenced_by_map[target_ayat].append({"surah": row[1], "ayat": row[2], "type": "kelime"})
+        
+        # Also add semantic reverse references
+        result2 = db.execute(text(
+            "SELECT target_ayat, source_surah, source_ayat FROM semantic_similarity WHERE target_surah = :surah"
+        ), {"surah": surah_number})
+        for row in result2:
+            target_ayat = row[0]
+            if target_ayat not in referenced_by_map:
+                referenced_by_map[target_ayat] = []
+            referenced_by_map[target_ayat].append({"surah": row[1], "ayat": row[2], "type": "anlam"})
+    except:
+        pass
+    
     # Get Semantic Similarity (QurSim) for this surah - meaning similarity
     semantic_map = {}
     try:
@@ -80,6 +104,25 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
             semantic_map[source_ayat].append({"surah": row[1], "ayat": row[2], "degree": row[3]})
     except:
         pass  # Table may not exist yet
+    
+    # Get Tafsir References for this surah
+    tafsir_map = {}
+    try:
+        result = db.execute(text(
+            "SELECT source_ayat, target_surah, target_ayat, mufassir, note_tr FROM tafsir_reference WHERE source_surah = :surah"
+        ), {"surah": surah_number})
+        for row in result:
+            source_ayat = row[0]
+            if source_ayat not in tafsir_map:
+                tafsir_map[source_ayat] = []
+            tafsir_map[source_ayat].append({
+                "surah": row[1], 
+                "ayat": row[2], 
+                "mufassir": row[3],
+                "note": row[4]
+            })
+    except:
+        pass
     
     # Update last read position
     set_preference(db, "last_read_surah", str(surah_number))
@@ -95,6 +138,8 @@ async def read_surah(request: Request, surah_number: int, db: Session = Depends(
         "nuzul_map": nuzul_map,
         "similar_map": similar_map,
         "semantic_map": semantic_map,
+        "referenced_by_map": referenced_by_map,
+        "tafsir_map": tafsir_map,
         "surah_names": SURAH_NAMES
     })
 
@@ -142,3 +187,90 @@ async def read_favorites(request: Request, db: Session = Depends(get_db)):
         "favorites": favorites
     })
 
+@router.get("/verse-graph/{surah_number}/{ayat_number}", response_class=HTMLResponse)
+async def verse_graph(request: Request, surah_number: int, ayat_number: int, db: Session = Depends(get_db)):
+    """Interactive D3.js graph showing verse relationships"""
+    from sqlalchemy import text
+    import json
+    
+    surah_name = SURAH_NAMES.get(surah_number, f"Sure {surah_number}")
+    
+    nodes = []
+    links = []
+    node_ids = set()
+    
+    # Center node
+    center_id = f"{surah_number}:{ayat_number}"
+    nodes.append({
+        "id": center_id,
+        "label": center_id,
+        "surah": surah_number,
+        "ayat": ayat_number,
+        "isCenter": True
+    })
+    node_ids.add(center_id)
+    
+    # Get outgoing kelime similarity (this verse -> others)
+    try:
+        result = db.execute(text(
+            "SELECT target_surah, target_ayat FROM similar_ayat WHERE source_surah = :s AND source_ayat = :a"
+        ), {"s": surah_number, "a": ayat_number})
+        for row in result:
+            target_id = f"{row[0]}:{row[1]}"
+            if target_id not in node_ids:
+                nodes.append({"id": target_id, "label": target_id, "surah": row[0], "ayat": row[1], "type": "kelime"})
+                node_ids.add(target_id)
+            links.append({"source": center_id, "target": target_id, "type": "kelime"})
+    except:
+        pass
+    
+    # Get outgoing semantic similarity
+    try:
+        result = db.execute(text(
+            "SELECT target_surah, target_ayat FROM semantic_similarity WHERE source_surah = :s AND source_ayat = :a"
+        ), {"s": surah_number, "a": ayat_number})
+        for row in result:
+            target_id = f"{row[0]}:{row[1]}"
+            if target_id not in node_ids:
+                nodes.append({"id": target_id, "label": target_id, "surah": row[0], "ayat": row[1], "type": "anlam"})
+                node_ids.add(target_id)
+            links.append({"source": center_id, "target": target_id, "type": "anlam"})
+    except:
+        pass
+    
+    # Get incoming references (others -> this verse)
+    try:
+        result = db.execute(text(
+            "SELECT source_surah, source_ayat FROM similar_ayat WHERE target_surah = :s AND target_ayat = :a"
+        ), {"s": surah_number, "a": ayat_number})
+        for row in result:
+            source_id = f"{row[0]}:{row[1]}"
+            if source_id not in node_ids:
+                nodes.append({"id": source_id, "label": source_id, "surah": row[0], "ayat": row[1], "type": "ref"})
+                node_ids.add(source_id)
+            links.append({"source": source_id, "target": center_id, "type": "ref"})
+    except:
+        pass
+    
+    try:
+        result = db.execute(text(
+            "SELECT source_surah, source_ayat FROM semantic_similarity WHERE target_surah = :s AND target_ayat = :a"
+        ), {"s": surah_number, "a": ayat_number})
+        for row in result:
+            source_id = f"{row[0]}:{row[1]}"
+            if source_id not in node_ids:
+                nodes.append({"id": source_id, "label": source_id, "surah": row[0], "ayat": row[1], "type": "ref"})
+                node_ids.add(source_id)
+            links.append({"source": source_id, "target": center_id, "type": "ref"})
+    except:
+        pass
+    
+    graph_data = json.dumps({"nodes": nodes, "links": links})
+    
+    return templates.TemplateResponse("verse_graph.html", {
+        "request": request,
+        "surah_number": surah_number,
+        "ayat_number": ayat_number,
+        "surah_name": surah_name,
+        "graph_data": graph_data
+    })
